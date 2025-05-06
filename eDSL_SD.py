@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Any, Dict, List, Deque, Tuple
+from typing import Callable, Any, Dict, List, Deque, Tuple, Optional
 from collections import deque
 
 
@@ -24,9 +24,9 @@ class Edge:
 
 
 class Node:
-    def __init__(self, name: str, fn: Callable[..., Any] = None):
+    def __init__(self, name: str, fn: Optional[Callable[..., Any]] = None):
         self.name = name
-        self.fn = fn or (lambda *args: None)
+        self.fn: Callable[..., Any] = fn if fn is not None else (lambda *args: None)
         self.in_edges: List[Edge] = []
         self.out_edges: List[Edge] = []
 
@@ -54,9 +54,7 @@ class GraphBuilder:
         self._edges: List[Edge] = []
 
     def add_node(
-        self,
-        name: str,
-        fn: Callable[..., Any] = None
+        self, name: str, fn: Optional[Callable[..., Any]] = None
     ) -> 'GraphBuilder':
         if name in self._nodes:
             raise ValueError(f"Node '{name}' already exists")
@@ -105,7 +103,6 @@ class Interpreter:
         logging.basicConfig(level=logging.DEBUG)
 
     def run(self, inputs: Dict[str, Any]) -> List[Tuple[str, List[Any], Any]]:
-        # Write the input to the outgoing edge of the corresponding node
         for name, value in inputs.items():
             node = self.nodes.get(name)
             if node is None:
@@ -113,12 +110,10 @@ class Interpreter:
             for edge in node.out_edges:
                 edge.send(value)
 
-        # Using queue scheduling
         queue = deque(
             node for node in self.nodes.values()
             if node.ready() and node.in_edges
         )
-
         while queue:
             node = queue.popleft()
             try:
