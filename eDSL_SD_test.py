@@ -98,7 +98,7 @@ def test_missing_input_node():
 
 # Input Validation Decorator Test
 def test_validate_input_decorator():
-    @validate_input({"x": int, "y": float})
+    @validate_input({"x": int, "y": (float, lambda y: y > 0)})
     def func(**kwargs):
         return kwargs["x"] + kwargs["y"]
 
