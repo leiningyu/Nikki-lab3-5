@@ -53,7 +53,11 @@ class GraphBuilder:
         self._nodes: Dict[str, Node] = {}
         self._edges: List[Edge] = []
 
-    def add_node(self, name: str, fn: Callable[..., Any] = None) -> 'GraphBuilder':
+    def add_node(
+        self,
+        name: str,
+        fn: Callable[..., Any] = None
+    ) -> 'GraphBuilder':
         if name in self._nodes:
             raise ValueError(f"Node '{name}' already exists")
         self._nodes[name] = Node(name, fn)
