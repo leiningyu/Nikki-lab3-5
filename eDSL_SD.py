@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Any, Dict, List, Deque, Tuple, Optional
+from typing import Callable, Any, Dict, List, Deque, Tuple, Optional, Union
 from collections import deque
 
 
@@ -26,7 +26,7 @@ class Edge:
 class Node:
     def __init__(self, name: str, fn: Optional[Callable[..., Any]] = None):
         self.name = name
-        self.fn: Callable[..., Any] = fn if fn is not None else (lambda *args: None)
+        self.fn = fn if fn is not None else (lambda *args: None)
         self.in_edges: List[Edge] = []
         self.out_edges: List[Edge] = []
 
@@ -83,12 +83,23 @@ class GraphBuilder:
 
 
 # ------- Input validation decorator -------
-def validate_input(schema: Dict[str, type]):
+def validate_input(
+        schema: Dict[str, Union[type, Tuple[type, Callable[[Any], bool]]]]):
     def decorator(fn: Callable[..., Any]):
         def wrapper(**kwargs):
-            for k, t in schema.items():
-                if k not in kwargs or not isinstance(kwargs[k], t):
-                    raise TypeError(f"Input '{k}' must be {t}")
+            for k, rule in schema.items():
+                if k not in kwargs:
+                    raise TypeError(f"Missing input '{k}'")
+                val = kwargs[k]
+                if isinstance(rule, tuple):
+                    typ, cond = rule
+                    if not isinstance(val, typ):
+                        raise TypeError(f"Input '{k}' must be of type {typ}")
+                    if not cond(val):
+                        raise ValueError(f"Input '{k}' wrong value range")
+                else:
+                    if not isinstance(val, rule):
+                        raise TypeError(f"Input '{k}' must be of type {rule}")
             return fn(**kwargs)
         return wrapper
     return decorator
