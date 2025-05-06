@@ -74,7 +74,7 @@ def test_empty_graph():
     assert trace == []
 
 
-# Cyclic dependency graphs should not loop infinitely 
+# Cyclic dependency graphs should not loop infinitely
 # and return empty trajectories
 def test_cycle_graph():
     builder = GraphBuilder()
