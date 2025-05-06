@@ -2,6 +2,7 @@ import logging
 from typing import Callable, Any, Dict, List, Deque, Tuple
 from collections import deque
 
+
 # ------- Model and Builder -------
 class Edge:
     def __init__(self, src: 'Node', dst: 'Node'):
@@ -11,13 +12,16 @@ class Edge:
 
     def send(self, value: Any):
         self.tokens.append(value)
-        logging.debug(f"Edge {self.src.name}->{self.dst.name} received token: {value}")
+        logging.debug(
+            f"Edge {self.src.name}->{self.dst.name} received token: {value}"
+        )
 
     def consume(self) -> Any:
         return self.tokens.popleft()
 
     def has_token(self) -> bool:
         return bool(self.tokens)
+
 
 class Node:
     def __init__(self, name: str, fn: Callable[..., Any] = None):
@@ -42,6 +46,7 @@ class Node:
         for edge in self.out_edges:
             edge.send(result)
         return result
+
 
 class GraphBuilder:
     def __init__(self):
@@ -74,6 +79,7 @@ class GraphBuilder:
     def build(self) -> Tuple[Dict[str, Node], List[Edge]]:
         return self._nodes, self._edges
 
+
 # ------- Input validation decorator -------
 def validate_input(schema: Dict[str, type]):
     def decorator(fn: Callable[..., Any]):
@@ -84,6 +90,7 @@ def validate_input(schema: Dict[str, type]):
             return fn(**kwargs)
         return wrapper
     return decorator
+
 
 # ------- Interpreter -------
 class Interpreter:
@@ -101,8 +108,13 @@ class Interpreter:
                 raise KeyError(f"Input node '{name}' not found")
             for edge in node.out_edges:
                 edge.send(value)
+
         # Using queue scheduling
-        queue = deque(node for node in self.nodes.values() if node.ready() and node.in_edges)
+        queue = deque(
+            node for node in self.nodes.values()
+            if node.ready() and node.in_edges
+        )
+
         while queue:
             node = queue.popleft()
             try:
@@ -114,11 +126,18 @@ class Interpreter:
                 downstream = edge.dst
                 if downstream.ready():
                     queue.append(downstream)
+
         return self.trace
+
 
 # ------- Visualizer -------
 class Visualizer:
-    def to_dot(self, nodes: Dict[str, Node], edges: List[Edge], trace: List[Tuple[str, List[Any], Any]]) -> str:
+    def to_dot(
+        self,
+        nodes: Dict[str, Node],
+        edges: List[Edge],
+        trace: List[Tuple[str, List[Any], Any]]
+    ) -> str:
         lines = ["digraph G {"]
         for node in nodes.values():
             lines.append(f'  "{node.name}";')
