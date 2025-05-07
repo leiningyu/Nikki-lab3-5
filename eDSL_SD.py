@@ -146,11 +146,18 @@ class Visualizer:
         self,
         nodes: Dict[str, Node],
         edges: List[Edge],
-        trace: List[Tuple[str, List[Any], Any]]
+        trace: List[Tuple[str, List[Any], Any]] = []
     ) -> str:
+        # Create trace mappings
+        result_map = {name: result for name, _, result in trace}
+
         lines = ["digraph G {"]
         for node in nodes.values():
-            lines.append(f'  "{node.name}";')
+            if node.name in result_map:
+                label = f"{node.name}\\nResult: {result_map[node.name]}"
+                lines.append(f'  "{node.name}" [label="{label}"];')
+            else:
+                lines.append(f'  "{node.name}";')
         for edge in edges:
             lines.append(f'  "{edge.src.name}" -> "{edge.dst.name}";')
         lines.append("}")
