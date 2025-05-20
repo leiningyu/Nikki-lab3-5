@@ -11,7 +11,11 @@ def test_simple_addition():
     nodes, edges = builder.build()
     interp = Interpreter(nodes, edges)
     trace = interp.run({"in": 10})
-    assert trace[-1][2] == 11
+    
+    # 输入节点 "in" 的 trace 条目是第一个，计算结果条目是第二个
+    assert len(trace) == 2
+    assert trace[0] == ("in", [], 10)   # 输入节点的输出记录
+    assert trace[-1][2] == 11          # 计算结果
 
 
 # Parametric Tests for Binary Addition
@@ -27,7 +31,12 @@ def test_binary_operation(a, b, expected):
     nodes, edges = builder.build()
     interp = Interpreter(nodes, edges)
     trace = interp.run({"a": a, "b": b})
-    assert trace[-1][2] == expected
+    
+    # 输入节点 "a" 和 "b" 的 trace 条目在前，计算结果条目是第三个
+    assert len(trace) == 3
+    assert trace[0] == ("a", [], a)    # 输入节点 a 的输出
+    assert trace[1] == ("b", [], b)    # 输入节点 b 的输出
+    assert trace[-1][2] == expected    # 计算结果
 
 
 # Quadratic Equation Solving Test
@@ -45,10 +54,11 @@ def test_quadratic_solver():
     nodes, edges = builder.build()
     interp = Interpreter(nodes, edges)
     trace = interp.run({"a": 1, "b": 0, "c": -1})
-    assert any(
-        step[0] == "root" and abs(step[2] - 2) < 1e-6
-        for step in trace
-    )
+    
+    # 确保 "root" 节点的计算结果存在（可能有多个中间节点记录）
+    root_steps = [step for step in trace if step[0] == "root"]
+    assert len(root_steps) == 1
+    assert abs(root_steps[0][2] - 2) < 1e-6
 
 
 # RS Trigger Test
@@ -65,7 +75,6 @@ def test_rs_flipflop():
 
 
 # Boundary test
-# Empty graph execution should return empty trajectories
 def test_empty_graph():
     builder = GraphBuilder()
     nodes, edges = builder.build()
@@ -74,8 +83,7 @@ def test_empty_graph():
     assert trace == []
 
 
-# Cyclic dependency graphs should not loop infinitely
-# and return empty trajectories
+# Cyclic dependency test
 def test_cycle_graph():
     builder = GraphBuilder()
     builder.add_node("A").add_node("B")
@@ -86,7 +94,7 @@ def test_cycle_graph():
     assert trace == []
 
 
-# Missing input nodes should throw a KeyError
+# Missing input nodes test
 def test_missing_input_node():
     builder = GraphBuilder()
     builder.add_node("X")
@@ -117,7 +125,9 @@ def test_validate_input_decorator():
         add_positive_and_float(y=2.0)
 
 
-def test_visualizer_with_trace():
+# Visualizer Test（更新断言）
+# 简单运算示例的DOT图生成测试
+def test_simple_example_visualizer():
     builder = GraphBuilder()
     builder.add_node("input").add_node("add1", fn=lambda x: x + 1)
     builder.add_node("double", fn=lambda x: x * 2)
@@ -130,6 +140,70 @@ def test_visualizer_with_trace():
     visualizer = Visualizer()
     dot_output = visualizer.to_dot(nodes, edges, trace)
 
-    # Result: 4 in add1 and Result: 8 in double
-    assert 'label="add1\\nResult: 4"' in dot_output
-    assert 'label="double\\nResult: 8"' in dot_output
+    with open("simple_example.dot", "w") as f:
+        f.write(dot_output)
+
+    # 验证节点标签
+    assert 'label="input\\nresult: 3"' in dot_output
+    assert 'label="add1\\nresult: 4"' in dot_output
+    assert 'label="double\\nresult: 8"' in dot_output
+    # 验证边标签
+    assert 'input" -> "add1" [label="3"]' in dot_output
+    assert 'add1" -> "double" [label="4"]' in dot_output
+
+
+# 二次方程求解的DOT图生成测试
+def test_quadratic_formula_visualizer():
+    builder = GraphBuilder()
+    builder.add_node("a").add_node("b").add_node("c")
+    builder.add_node("b2", fn=lambda b: b * b)
+    builder.add_edge("b", "b2")
+    builder.add_node("ac4", fn=lambda a, c: 4 * a * c)
+    builder.add_edge("a", "ac4").add_edge("c", "ac4")
+    builder.add_node("delta", fn=lambda x, y: x - y)
+    builder.add_edge("b2", "delta").add_edge("ac4", "delta")
+    builder.add_node("root", fn=lambda d: math.sqrt(d))
+    builder.add_edge("delta", "root")
+    nodes, edges = builder.build()
+    
+    interp = Interpreter(nodes, edges)
+    trace = interp.run({"a": 1, "b": 0, "c": -1})
+    
+    visualizer = Visualizer()
+    dot_output = visualizer.to_dot(nodes, edges, trace)
+    
+    with open("quadratic_formula.dot", "w") as f:
+        f.write(dot_output)
+    
+    # 验证关键节点和边
+    assert 'label="a\\nresult: 1"' in dot_output
+    assert 'label="b\\nresult: 0"' in dot_output
+    assert 'label="c\\nresult: -1"' in dot_output
+    assert 'label="delta\\nresult: 4"' in dot_output
+    assert 'ac4" -> "delta" [label="-4"]' in dot_output
+    assert 'delta" -> "root" [label="4"]' in dot_output
+
+
+# RS触发器的DOT图生成测试
+def test_rs_trigger_visualizer():
+    builder = GraphBuilder()
+    builder.add_node("S").add_node("R")
+    builder.add_node("Q", fn=lambda s, r: s and not r)
+    builder.add_edge("S", "Q").add_edge("R", "Q")
+    nodes, edges = builder.build()
+    
+    interp = Interpreter(nodes, edges)
+    trace = interp.run({"S": True, "R": False})
+    
+    visualizer = Visualizer()
+    dot_output = visualizer.to_dot(nodes, edges, trace)
+    
+    with open("RS-trigger.dot", "w") as f:
+        f.write(dot_output)
+    
+    # 验证布尔值结果
+    assert 'label="S\\nresult: True"' in dot_output
+    assert 'label="R\\nresult: False"' in dot_output
+    assert 'label="Q\\nresult: True"' in dot_output
+    assert 'S" -> "Q" [label="True"]' in dot_output
+    assert 'R" -> "Q" [label="False"]' in dot_output
