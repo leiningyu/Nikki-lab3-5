@@ -39,13 +39,13 @@ class Node:
     def ready(self) -> bool:
         return all(edge.has_token() for edge in self.in_edges)
 
-    def activate(self) -> Any:
+    def activate(self) -> Tuple[List[Any], Any]:
         inputs = [edge.consume() for edge in self.in_edges]
         logging.debug(f"Activating node {self.name} with inputs {inputs}")
         result = self.fn(*inputs)
         for edge in self.out_edges:
             edge.send(result)
-        return result
+        return inputs, result
 
 
 class GraphBuilder:
@@ -114,13 +114,16 @@ class Interpreter:
         logging.basicConfig(level=logging.DEBUG)
 
     def run(self, inputs: Dict[str, Any]) -> List[Tuple[str, List[Any], Any]]:
+        # 注入输入数据并记录输入节点的输出
         for name, value in inputs.items():
             node = self.nodes.get(name)
             if node is None:
                 raise KeyError(f"Input node '{name}' not found")
             for edge in node.out_edges:
                 edge.send(value)
+            self.trace.append((node.name, [], value))  # 输入节点输出记录
 
+        # 处理就绪节点
         queue = deque(
             node for node in self.nodes.values()
             if node.ready() and node.in_edges
@@ -128,15 +131,15 @@ class Interpreter:
         while queue:
             node = queue.popleft()
             try:
-                result = node.activate()
-                self.trace.append((node.name, [], result))
+                inputs_consumed, result = node.activate()
+                self.trace.append((node.name, inputs_consumed, result))
             except Exception as e:
                 logging.error(f"Error in node '{node.name}': {e}")
+            # 触发下游节点
             for edge in node.out_edges:
                 downstream = edge.dst
-                if downstream.ready():
+                if downstream.ready() and downstream not in queue:
                     queue.append(downstream)
-
         return self.trace
 
 
@@ -148,17 +151,18 @@ class Visualizer:
         edges: List[Edge],
         trace: List[Tuple[str, List[Any], Any]] = []
     ) -> str:
-        # Create trace mappings
         result_map = {name: result for name, _, result in trace}
-
         lines = ["digraph G {"]
+        # 生成节点标签（名称 + 结果）
         for node in nodes.values():
+            label = [node.name]
             if node.name in result_map:
-                label = f"{node.name}\\nResult: {result_map[node.name]}"
-                lines.append(f'  "{node.name}" [label="{label}"];')
-            else:
-                lines.append(f'  "{node.name}";')
+                label.append(f"result: {result_map[node.name]}")
+            lines.append(f'  "{node.name}" [label="{"\\n".join(label)}"];')
+        # 生成边标签（显示源节点的输出值）
         for edge in edges:
-            lines.append(f'  "{edge.src.name}" -> "{edge.dst.name}";')
+            src_name = edge.src.name
+            edge_label = result_map.get(src_name, "")
+            lines.append(f'  "{src_name}" -> "{edge.dst.name}" [label="{edge_label}"];')
         lines.append("}")
         return "\n".join(lines)
