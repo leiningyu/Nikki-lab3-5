@@ -114,16 +114,16 @@ class Interpreter:
         logging.basicConfig(level=logging.DEBUG)
 
     def run(self, inputs: Dict[str, Any]) -> List[Tuple[str, List[Any], Any]]:
-        # 注入输入数据并记录输入节点的输出
+        # Inject the input data and record the output of the input node
         for name, value in inputs.items():
             node = self.nodes.get(name)
             if node is None:
                 raise KeyError(f"Input node '{name}' not found")
             for edge in node.out_edges:
                 edge.send(value)
-            self.trace.append((node.name, [], value))  # 输入节点输出记录
+            self.trace.append((node.name, [], value))  # Output record
 
-        # 处理就绪节点
+        # Process ready node
         queue = deque(
             node for node in self.nodes.values()
             if node.ready() and node.in_edges
@@ -135,7 +135,7 @@ class Interpreter:
                 self.trace.append((node.name, inputs_consumed, result))
             except Exception as e:
                 logging.error(f"Error in node '{node.name}': {e}")
-            # 触发下游节点
+            # Trigger downstream nodes
             for edge in node.out_edges:
                 downstream = edge.dst
                 if downstream.ready() and downstream not in queue:
@@ -153,16 +153,18 @@ class Visualizer:
     ) -> str:
         result_map = {name: result for name, _, result in trace}
         lines = ["digraph G {"]
-        # 生成节点标签（名称 + 结果）
+        # Generate node labels
         for node in nodes.values():
             label = [node.name]
             if node.name in result_map:
                 label.append(f"result: {result_map[node.name]}")
             lines.append(f'  "{node.name}" [label="{"\\n".join(label)}"];')
-        # 生成边标签（显示源节点的输出值）
+        # Generate edge labels (display the output values of the source node)
         for edge in edges:
             src_name = edge.src.name
             edge_label = result_map.get(src_name, "")
-            lines.append(f'  "{src_name}" -> "{edge.dst.name}" [label="{edge_label}"];')
+            lines.append(
+                f'  "{src_name}" -> "{edge.dst.name}" [label="{edge_label}"];'
+                )
         lines.append("}")
         return "\n".join(lines)
