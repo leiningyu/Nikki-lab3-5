@@ -6,20 +6,20 @@ A series of functional requirements are realized and tested based on
 ## Project structure
 
 - `eDSL_SD.py` -- Implementation of Synchronous Dataflow
-- `eDSL_SD_test.py` -- Unit tests for `eDSL_SD`.
+- `eDSL_SD_test.py` -- Tests for `eDSL_SD`.
 
 ## Features
 
-- **Unit Tests**:
+- **Tests**:
    - `test_simple_addition`
    - `test_binary_operation`
    - `test_quadratic_solver`
-   - `test_rs_flipflop`
    - `test_empty_graph`
    - `test_cycle_graph`
    - `est_missing_input_node`
    - `test_validate_input_decorator`
-   - `test_visualizer_with_trace`
+   - `test_simple_example_visualizer`
+   - `test_quadratic_formula_visualizer`
 
 ## Contribution
 
@@ -32,6 +32,10 @@ A series of functional requirements are realized and tested based on
    - Initial version.
 - **06.05.2025 - v1**
    - Updated README, `eDSL_SD.py`, and `eDSL_SD_test.py`.
+- **20.05.2025 - v2**
+   - Updated `eDSL_SD.py`, and `eDSL_SD_test.py`.
+- **21.05.2025 - v3**
+   - Updated README, `quadratic_formula.dot` and `eDSL_SD_test.py`. 
 
 ## Design Notes
 
@@ -46,3 +50,8 @@ A series of functional requirements are realized and tested based on
 - **validate_input**:
    - It is a higher-order decorator.
    - it verifies that the function input conforms to a predefined type.
+
+- **Interpreter**:
+   - Support manual input of values.
+   - Manage the activation sequence of nodes.
+   - Logging module make the interpreter work transparent.
