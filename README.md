@@ -15,7 +15,6 @@ A series of functional requirements are realized and tested based on
    - `test_binary_operation`
    - `test_quadratic_solver`
    - `test_empty_graph`
-   - `test_cycle_graph`
    - `est_missing_input_node`
    - `test_validate_input_decorator`
    - `test_simple_example_visualizer`
