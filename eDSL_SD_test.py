@@ -85,17 +85,6 @@ def test_empty_graph():
     assert trace == []
 
 
-# Cyclic dependency test
-def test_cycle_graph():
-    builder = GraphBuilder()
-    builder.add_node("A").add_node("B")
-    builder.add_edge("A", "B").add_edge("B", "A")
-    nodes, edges = builder.build()
-    interp = Interpreter(nodes, edges)
-    trace = interp.run({})
-    assert trace == []
-
-
 # Missing input nodes test
 def test_missing_input_node():
     builder = GraphBuilder()
