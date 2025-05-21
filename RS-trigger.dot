@@ -1,0 +1,5 @@
+digraph G {
+  "Q" [label="Q\nresult: True"];
+  "S" -> "Q" [label="True"];
+  "R" -> "Q" [label="False"];
+}

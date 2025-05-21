@@ -1,0 +1,9 @@
+digraph G {
+  "root" [label="root\nresult: 2.0"];
+  "b" -> "b2" [label="0"];
+  "a" -> "ac4" [label="1"];
+  "c" -> "ac4" [label="-1"];
+  "b2" -> "delta" [label="0"];
+  "ac4" -> "delta" [label="-4"];
+  "delta" -> "root" [label="4"];
+}

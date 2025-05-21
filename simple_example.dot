@@ -1,0 +1,5 @@
+digraph G {
+  "double" [label="double\nresult: 8"];
+  "input" -> "add1" [label="3"];
+  "add1" -> "double" [label="4"];
+}
