@@ -11,11 +11,11 @@ def test_simple_addition():
     nodes, edges = builder.build()
     interp = Interpreter(nodes, edges)
     trace = interp.run({"in": 10})
-    
-    # 输入节点 "in" 的 trace 条目是第一个，计算结果条目是第二个
+
     assert len(trace) == 2
-    assert trace[0] == ("in", [], 10)   # 输入节点的输出记录
-    assert trace[-1][2] == 11          # 计算结果
+    assert trace[0] == ("in", [], 10)
+    # The calculation result of the last node
+    assert trace[-1][2] == 11
 
 
 # Parametric Tests for Binary Addition
@@ -31,12 +31,11 @@ def test_binary_operation(a, b, expected):
     nodes, edges = builder.build()
     interp = Interpreter(nodes, edges)
     trace = interp.run({"a": a, "b": b})
-    
-    # 输入节点 "a" 和 "b" 的 trace 条目在前，计算结果条目是第三个
+
     assert len(trace) == 3
-    assert trace[0] == ("a", [], a)    # 输入节点 a 的输出
-    assert trace[1] == ("b", [], b)    # 输入节点 b 的输出
-    assert trace[-1][2] == expected    # 计算结果
+    assert trace[0] == ("a", [], a)    # input a
+    assert trace[1] == ("b", [], b)    # input b
+    assert trace[-1][2] == expected    # result
 
 
 # Quadratic Equation Solving Test
@@ -54,8 +53,8 @@ def test_quadratic_solver():
     nodes, edges = builder.build()
     interp = Interpreter(nodes, edges)
     trace = interp.run({"a": 1, "b": 0, "c": -1})
-    
-    # 确保 "root" 节点的计算结果存在（可能有多个中间节点记录）
+
+    # Ensure the calculation result of the "root" node exists
     root_steps = [step for step in trace if step[0] == "root"]
     assert len(root_steps) == 1
     assert abs(root_steps[0][2] - 2) < 1e-6
@@ -125,8 +124,8 @@ def test_validate_input_decorator():
         add_positive_and_float(y=2.0)
 
 
-# Visualizer Test（更新断言）
-# 简单运算示例的DOT图生成测试
+# Visualizer Test
+# Simple example
 def test_simple_example_visualizer():
     builder = GraphBuilder()
     builder.add_node("input").add_node("add1", fn=lambda x: x + 1)
@@ -143,16 +142,16 @@ def test_simple_example_visualizer():
     with open("simple_example.dot", "w") as f:
         f.write(dot_output)
 
-    # 验证节点标签
+    # Verify the node label
     assert 'label="input\\nresult: 3"' in dot_output
     assert 'label="add1\\nresult: 4"' in dot_output
     assert 'label="double\\nresult: 8"' in dot_output
-    # 验证边标签
+    # Verify the edge label
     assert 'input" -> "add1" [label="3"]' in dot_output
     assert 'add1" -> "double" [label="4"]' in dot_output
 
 
-# 二次方程求解的DOT图生成测试
+# quadratic formula
 def test_quadratic_formula_visualizer():
     builder = GraphBuilder()
     builder.add_node("a").add_node("b").add_node("c")
@@ -165,17 +164,16 @@ def test_quadratic_formula_visualizer():
     builder.add_node("root", fn=lambda d: math.sqrt(d))
     builder.add_edge("delta", "root")
     nodes, edges = builder.build()
-    
+
     interp = Interpreter(nodes, edges)
     trace = interp.run({"a": 1, "b": 0, "c": -1})
-    
+
     visualizer = Visualizer()
     dot_output = visualizer.to_dot(nodes, edges, trace)
-    
+
     with open("quadratic_formula.dot", "w") as f:
         f.write(dot_output)
-    
-    # 验证关键节点和边
+
     assert 'label="a\\nresult: 1"' in dot_output
     assert 'label="b\\nresult: 0"' in dot_output
     assert 'label="c\\nresult: -1"' in dot_output
@@ -184,24 +182,23 @@ def test_quadratic_formula_visualizer():
     assert 'delta" -> "root" [label="4"]' in dot_output
 
 
-# RS触发器的DOT图生成测试
+# RS trigger
 def test_rs_trigger_visualizer():
     builder = GraphBuilder()
     builder.add_node("S").add_node("R")
     builder.add_node("Q", fn=lambda s, r: s and not r)
     builder.add_edge("S", "Q").add_edge("R", "Q")
     nodes, edges = builder.build()
-    
+
     interp = Interpreter(nodes, edges)
     trace = interp.run({"S": True, "R": False})
-    
+
     visualizer = Visualizer()
     dot_output = visualizer.to_dot(nodes, edges, trace)
-    
+
     with open("RS-trigger.dot", "w") as f:
         f.write(dot_output)
-    
-    # 验证布尔值结果
+
     assert 'label="S\\nresult: True"' in dot_output
     assert 'label="R\\nresult: False"' in dot_output
     assert 'label="Q\\nresult: True"' in dot_output
