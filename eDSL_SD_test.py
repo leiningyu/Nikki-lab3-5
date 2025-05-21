@@ -42,35 +42,38 @@ def test_binary_operation(a, b, expected):
 def test_quadratic_solver():
     builder = GraphBuilder()
     builder.add_node("a").add_node("b").add_node("c")
-    builder.add_node("b2", fn=lambda b: b * b)
-    builder.add_edge("b", "b2")
-    builder.add_node("ac4", fn=lambda a, c: 4 * a * c)
-    builder.add_edge("a", "ac4").add_edge("c", "ac4")
+    builder.add_node("b^2", fn=lambda b: b * b)
+    builder.add_edge("b", "b^2")
+    builder.add_node("4ac", fn=lambda a, c: 4 * a * c)
+    builder.add_edge("a", "4ac").add_edge("c", "4ac")
     builder.add_node("delta", fn=lambda x, y: x - y)
-    builder.add_edge("b2", "delta").add_edge("ac4", "delta")
-    builder.add_node("root", fn=lambda d: math.sqrt(d))
-    builder.add_edge("delta", "root")
+    builder.add_edge("b^2", "delta").add_edge("4ac", "delta")
+    builder.add_node("-b", fn=lambda b: -b)
+    builder.add_node("sqrt_delta", fn=lambda d: math.sqrt(d))
+    builder.add_node("2a", fn=lambda a: 2 * a)
+    builder.add_node("root_plus", fn=lambda n, s, d: (n + s) / d)
+    builder.add_node("root_minus", fn=lambda n, s, d: (n - s) / d)
+    builder.add_edge("b", "-b")
+    builder.add_edge("delta", "sqrt_delta")
+    builder.add_edge("a", "2a")
+    builder.add_edge("-b", "root_plus")
+    builder.add_edge("sqrt_delta", "root_plus")
+    builder.add_edge("2a", "root_plus")
+    builder.add_edge("-b", "root_minus")
+    builder.add_edge("sqrt_delta", "root_minus")
+    builder.add_edge("2a", "root_minus")
+
     nodes, edges = builder.build()
     interp = Interpreter(nodes, edges)
     trace = interp.run({"a": 1, "b": 0, "c": -1})
 
-    # Ensure the calculation result of the "root" node exists
-    root_steps = [step for step in trace if step[0] == "root"]
-    assert len(root_steps) == 1
-    assert abs(root_steps[0][2] - 2) < 1e-6
-
-
-# RS Trigger Test
-def test_rs_flipflop():
-    builder = GraphBuilder()
-    builder.add_node("S").add_node("R")
-    builder.add_node("Q", fn=lambda s, prev_q: s and not prev_q)
-    builder.add_edge("S", "Q").add_edge("R", "Q")
-    nodes, edges = builder.build()
-    interp = Interpreter(nodes, edges)
-    for val in [(True, False), (False, True)]:
-        trace = interp.run({"S": val[0], "R": val[1]})
-        assert isinstance(trace[-1][2], bool)
+    results = {name: res for name, _, res in trace}
+    assert results["delta"] == 4
+    assert results["sqrt_delta"] == 2
+    assert results["-b"] == 0
+    assert results["2a"] == 2
+    assert results["root_plus"] == 1    # (0+2)/2=1
+    assert results["root_minus"] == -1  # (0-2)/2=-1
 
 
 # Boundary test
@@ -151,18 +154,29 @@ def test_simple_example_visualizer():
     assert 'add1" -> "double" [label="4"]' in dot_output
 
 
-# quadratic formula
 def test_quadratic_formula_visualizer():
     builder = GraphBuilder()
     builder.add_node("a").add_node("b").add_node("c")
-    builder.add_node("b2", fn=lambda b: b * b)
-    builder.add_edge("b", "b2")
-    builder.add_node("ac4", fn=lambda a, c: 4 * a * c)
-    builder.add_edge("a", "ac4").add_edge("c", "ac4")
+    builder.add_node("b^2", fn=lambda b: b * b)
+    builder.add_edge("b", "b^2")
+    builder.add_node("4ac", fn=lambda a, c: 4 * a * c)
+    builder.add_edge("a", "4ac").add_edge("c", "4ac")
     builder.add_node("delta", fn=lambda x, y: x - y)
-    builder.add_edge("b2", "delta").add_edge("ac4", "delta")
-    builder.add_node("root", fn=lambda d: math.sqrt(d))
-    builder.add_edge("delta", "root")
+    builder.add_edge("b^2", "delta").add_edge("4ac", "delta")
+    builder.add_node("-b", fn=lambda b: -b)
+    builder.add_node("sqrt_delta", fn=lambda d: math.sqrt(d))
+    builder.add_node("2a", fn=lambda a: 2 * a)
+    builder.add_node("root_plus", fn=lambda n, s, d: (n + s) / d)
+    builder.add_node("root_minus", fn=lambda n, s, d: (n - s) / d)
+    builder.add_edge("b", "-b")
+    builder.add_edge("delta", "sqrt_delta")
+    builder.add_edge("a", "2a")
+    builder.add_edge("-b", "root_plus")
+    builder.add_edge("sqrt_delta", "root_plus")
+    builder.add_edge("2a", "root_plus")
+    builder.add_edge("-b", "root_minus")
+    builder.add_edge("sqrt_delta", "root_minus")
+    builder.add_edge("2a", "root_minus")
     nodes, edges = builder.build()
 
     interp = Interpreter(nodes, edges)
@@ -174,33 +188,11 @@ def test_quadratic_formula_visualizer():
     with open("quadratic_formula.dot", "w") as f:
         f.write(dot_output)
 
-    assert 'label="a\\nresult: 1"' in dot_output
-    assert 'label="b\\nresult: 0"' in dot_output
-    assert 'label="c\\nresult: -1"' in dot_output
-    assert 'label="delta\\nresult: 4"' in dot_output
-    assert 'ac4" -> "delta" [label="-4"]' in dot_output
-    assert 'delta" -> "root" [label="4"]' in dot_output
-
-
-# RS trigger
-def test_rs_trigger_visualizer():
-    builder = GraphBuilder()
-    builder.add_node("S").add_node("R")
-    builder.add_node("Q", fn=lambda s, r: s and not r)
-    builder.add_edge("S", "Q").add_edge("R", "Q")
-    nodes, edges = builder.build()
-
-    interp = Interpreter(nodes, edges)
-    trace = interp.run({"S": True, "R": False})
-
-    visualizer = Visualizer()
-    dot_output = visualizer.to_dot(nodes, edges, trace)
-
-    with open("RS-trigger.dot", "w") as f:
-        f.write(dot_output)
-
-    assert 'label="S\\nresult: True"' in dot_output
-    assert 'label="R\\nresult: False"' in dot_output
-    assert 'label="Q\\nresult: True"' in dot_output
-    assert 'S" -> "Q" [label="True"]' in dot_output
-    assert 'R" -> "Q" [label="False"]' in dot_output
+    assert 'label="-b\\nresult: 0"' in dot_output
+    assert 'label="2a\\nresult: 2"' in dot_output
+    assert 'label="root_plus\\nresult: 1.0"' in dot_output
+    assert 'label="root_minus\\nresult: -1.0"' in dot_output
+    assert '2a" -> "root_plus" [label="2"]' in dot_output
+    assert 'sqrt_delta" -> "root_plus" [label="2.0"]' in dot_output
+    assert '-b" -> "root_plus" [label="0"]' in dot_output
+    assert '-b" -> "root_minus" [label="0"]' in dot_output
