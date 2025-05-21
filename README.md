@@ -35,7 +35,7 @@ A series of functional requirements are realized and tested based on
 - **20.05.2025 - v2**
    - Updated `eDSL_SD.py`, and `eDSL_SD_test.py`.
 - **21.05.2025 - v3**
-   - Updated README, `quadratic_formula.dot` and `eDSL_SD_test.py`. 
+   - Updated README, `quadratic_formula.dot` and `eDSL_SD_test.py`.
 
 ## Design Notes
 
